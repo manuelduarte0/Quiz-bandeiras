@@ -26,6 +26,12 @@
         }
         h1 { color: #333; margin-bottom: 20px; }
         .info { margin: 15px 0; font-size: 18px; }
+        .timer { 
+            font-size: 24px; 
+            color: #e74c3c; 
+            font-weight: bold;
+            margin: 10px 0;
+        }
         .bandeira { font-size: 100px; margin: 20px 0; }
         .opcoes {
             display: grid;
@@ -46,6 +52,8 @@
         button:hover { background: #5568d3; transform: scale(1.05); }
         .btn-pular { background: #95a5a6; grid-column: span 2; }
         .btn-pular:hover { background: #7f8c8d; }
+        .btn-iniciar { background: #2ecc71; font-size: 20px; padding: 15px; }
+        .btn-iniciar:hover { background: #27ae60; }
         input {
             width: 100%;
             padding: 12px;
@@ -63,7 +71,8 @@
         th, td { padding: 8px; text-align: left; }
         th { background: #667eea; color: white; }
         tr:nth-child(even) { background: #f2f2f2; }
-        .game-over { display: none; }
+        .tela { display: none; }
+        .tela.ativa { display: block; }
         .correct { background: #2ecc71 !important; }
         .wrong { background: #e74c3c !important; }
         button:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -73,20 +82,27 @@
     <div class="container">
         <h1>🏁 Quiz das Bandeiras</h1>
         
-        <div id="game">
+        <div id="telaInicio" class="tela ativa">
+            <h2>Digite seu nome</h2>
+            <input type="text" id="nomeJogador" placeholder="Seu nome" maxlength="20">
+            <button class="btn-iniciar" onclick="iniciarJogo()">Começar Quiz</button>
+        </div>
+
+        <div id="telaJogo" class="tela">
+            <div class="info">Jogador: <span id="nomeExibido"></span></div>
             <div class="info">Vidas: <span id="vidas">❤️❤️❤️</span></div>
-            <div class="info">Pontos: <span id="pontos">0</span></div>
+            <div class="info">Pontos: <span id="pontos">0</span>/10</div>
+            <div class="timer" id="timer">⏱️ 10s</div>
             <div class="bandeira" id="bandeira">🏳️</div>
             <div class="opcoes" id="opcoes"></div>
             <button class="btn-pular" onclick="pular()">Pular -1 vida</button>
         </div>
 
-        <div id="gameOver" class="game-over">
-            <h2>Game Over!</h2>
-            <p>Sua pontuação: <span id="pontosFinal">0</span></p>
-            <input type="text" id="nomeJogador" placeholder="Seu nome" maxlength="20">
-            <button onclick="salvarPontuacao()">Salvar Pontuação</button>
-            <button onclick="reiniciar()">Jogar Novamente</button>
+        <div id="telaGameOver" class="tela">
+            <h2>💀 Game Over!</h2>
+            <p><span id="nomeFinal"></span></p>
+            <p>Sua pontuação: <span id="pontosFinal">0</span>/10</p>
+            <p id="msgSalvando">Salvando...</p>
         </div>
 
         <div class="ranking">
@@ -100,6 +116,10 @@
             </div>
         </div>
     </div>
+
+    <audio id="somDerrota">
+        <source src="https://www.myinstants.com/media/sounds/sad-violin.mp3" type="audio/mpeg">
+    </audio>
 
     <script>
         const PAIS_BANDEIRAS = [
@@ -118,17 +138,64 @@
         let vidas = 3;
         let pontos = 0;
         let paisAtual = {};
-        let paisesUsados = [];
+        let paisesDisponiveis = [];
+        let tempo = 10;
+        let timerInterval;
+        let nomeJogador = "";
         const SENHA_ADMIN = "bandeira123";
         const BIN_ID = "68f27a8d43b1c97be9799d2a";
         const API_KEY = "$2a$10$RqF8X8X8XeX8X8X8X8X8";
 
-        function novaRodada() {
-            if (paisesUsados.length === PAIS_BANDEIRAS.length) paisesUsados = [];
+        function iniciarJogo() {
+            nomeJogador = document.getElementById('nomeJogador').value.trim();
+            if (!nomeJogador) return alert('Digite seu nome!');
             
-            let disponiveis = PAIS_BANDEIRAS.filter(p => !paisesUsados.includes(p.pais));
-            paisAtual = disponiveis[Math.floor(Math.random() * disponiveis.length)];
-            paisesUsados.push(paisAtual.pais);
+            vidas = 3;
+            pontos = 0;
+            paisesDisponiveis = [...PAIS_BANDEIRAS];
+            
+            document.getElementById('nomeExibido').textContent = nomeJogador;
+            document.getElementById('telaInicio').classList.remove('ativa');
+            document.getElementById('telaJogo').classList.add('ativa');
+            
+            atualizarTela();
+            novaRodada();
+        }
+
+        function iniciarTimer() {
+            tempo = 10;
+            document.getElementById('timer').textContent = `⏱️ ${tempo}s`;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                tempo--;
+                document.getElementById('timer').textContent = `⏱️ ${tempo}s`;
+                if (tempo <= 0) {
+                    clearInterval(timerInterval);
+                    tempoEsgotado();
+                }
+            }, 1000);
+        }
+
+        function tempoEsgotado() {
+            const botoes = document.querySelectorAll('.opcoes button');
+            botoes.forEach(b => b.disabled = true);
+            vidas--;
+            if (vidas <= 0) {
+                gameOver();
+            } else {
+                atualizarTela();
+                setTimeout(novaRodada, 1000);
+            }
+        }
+
+        function novaRodada() {
+            if (paisesDisponiveis.length === 0 || vidas <= 0) {
+                gameOver();
+                return;
+            }
+            
+            const index = Math.floor(Math.random() * paisesDisponiveis.length);
+            paisAtual = paisesDisponiveis.splice(index, 1)[0];
             
             document.getElementById('bandeira').textContent = paisAtual.bandeira;
             
@@ -146,14 +213,17 @@
                 btn.onclick = () => verificarResposta(opcao, btn);
                 opcoesDiv.appendChild(btn);
             });
+            
+            iniciarTimer();
         }
 
         function verificarResposta(resposta, botao) {
+            clearInterval(timerInterval);
             const botoes = document.querySelectorAll('.opcoes button');
             botoes.forEach(b => b.disabled = true);
             
             if (resposta === paisAtual.pais) {
-                pontos += 10;
+                pontos += 1;
                 botao.classList.add('correct');
                 setTimeout(() => {
                     atualizarTela();
@@ -177,6 +247,7 @@
         }
 
         function pular() {
+            clearInterval(timerInterval);
             vidas--;
             if (vidas <= 0) {
                 gameOver();
@@ -191,15 +262,16 @@
             document.getElementById('pontos').textContent = pontos;
         }
 
-        function gameOver() {
-            document.getElementById('game').style.display = 'none';
-            document.getElementById('gameOver').style.display = 'block';
+        async function gameOver() {
+            clearInterval(timerInterval);
+            
+            // TOCA A MÚSICA TRISTE KKKK
+            document.getElementById('somDerrota').play().catch(e => console.log('Audio bloqueado'));
+            
+            document.getElementById('telaJogo').classList.remove('ativa');
+            document.getElementById('telaGameOver').classList.add('ativa');
+            document.getElementById('nomeFinal').textContent = nomeJogador;
             document.getElementById('pontosFinal').textContent = pontos;
-        }
-
-        async function salvarPontuacao() {
-            const nome = document.getElementById('nomeJogador').value.trim();
-            if (!nome) return alert('Digite seu nome!');
             
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
@@ -208,7 +280,7 @@
                 const data = await res.json();
                 const ranking = data.record.ranking || [];
                 
-                ranking.push({ nome, pontos, data: new Date().toLocaleDateString('pt-BR') });
+                ranking.push({ nome: nomeJogador, pontos, data: new Date().toLocaleDateString('pt-BR') });
                 ranking.sort((a, b) => b.pontos - a.pontos);
                 const top10 = ranking.slice(0, 10);
                 
@@ -221,10 +293,9 @@
                     body: JSON.stringify({ ranking: top10 })
                 });
                 
-                alert('Pontuação salva!');
-                reiniciar();
+                document.getElementById('msgSalvando').textContent = '✅ Pontuação salva! Recarregue para jogar novamente.';
             } catch (e) {
-                alert('Erro ao salvar. Tenta de novo!');
+                document.getElementById('msgSalvando').textContent = '❌ Erro ao salvar pontuação';
             }
         }
 
@@ -250,18 +321,6 @@
                 alert('Erro ao carregar ranking');
             }
         }
-
-        function reiniciar() {
-            vidas = 3;
-            pontos = 0;
-            paisesUsados = [];
-            document.getElementById('game').style.display = 'block';
-            document.getElementById('gameOver').style.display = 'none';
-            atualizarTela();
-            novaRodada();
-        }
-
-        novaRodada();
     </script>
 </body>
 </html>
