@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz das Bandeiras</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px;
+        }
+      .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 500px; 
+            width: 100%; 
+            text-align: center;
+        }
+        h1 { color: #333; margin-bottom: 20px; }
+      .vidas { font-size: 24px; margin: 15px 0; }
+      .pontuacao { font-size: 18px; margin: 10px 0; font-weight: bold; }
+      .bandeira { font-size: 100px; margin: 20px 0; }
+        input { 
+            padding: 12px; 
+            font-size: 16px; 
+            width: 80%; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            margin: 10px 0;
+        }
+        button { 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            padding: 12px 25px; 
+            font-size: 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #5a67d8; }
+      .game-over { display: none; }
+      .ranking { 
+            margin-top: 20px; 
+            text-align: left; 
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+      .admin { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏁 Quiz das Bandeiras</h1>
+        
+        <div id="jogo">
+            <div class="vidas">Vidas: <span id="vidas">❤️❤️❤️</span></div>
+            <div class="pontuacao">Pontos: <span id="pontos">0</span></div>
+            <div class="bandeira" id="bandeira">🇧🇷</div>
+            <input type="text" id="resposta" placeholder="Qual é o país?" autocomplete="off">
+            <br>
+            <button onclick="verificar()">Responder</button>
+            <button onclick="pular()">Pular</button>
+        </div>
+
+        <div id="gameOver" class="game-over">
+            <h2>Fim de Jogo!</h2>
+            <p>Sua pontuação: <span id="pontosFinal">0</span></p>
+            <input type="text" id="nome" placeholder="Digite seu nome" maxlength="20">
+            <br>
+            <button onclick="salvarPontuacao()">Salvar Pontuação</button>
+            <button onclick="reiniciar()">Jogar Novamente</button>
+            <p id="msgSalvo" style="color: green; margin-top: 10px;"></p>
+        </div>
+
+        <div class="admin">
+            <input type="password" id="senha" placeholder="Senha do admin">
+            <button onclick="verRanking()">Ver Ranking</button>
+            <div id="ranking" class="ranking">
+                <h3>Ranking Top 10</h3>
+                <table id="tabelaRanking">
+                    <tr><th>Pos</th><th>Nome</th><th>Pontos</th></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+
+        // IMPORTANTE: TROCA ISSO PELAS SUAS CHAVES DO FIREBASE DEPOIS
+        const firebaseConfig = {
+            apiKey: "COLE_SUA_API_KEY",
+            authDomain: "COLE_SEU_AUTH_DOMAIN",
+            projectId: "COLE_SEU_PROJECT_ID",
+            storageBucket: "COLE_SEU_STORAGE_BUCKET",
+            messagingSenderId: "COLE_SEU_SENDER_ID",
+            appId: "COLE_SEU_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const bandeiras = [
+            {emoji: "🇧🇷", pais: "brasil"},
+            {emoji: "🇺🇸", pais: "estados unidos"},
+            {emoji: "🇵🇹", pais: "portugal"},
+            {emoji: "🇯🇵", pais: "japao"},
+            {emoji: "🇫🇷", pais: "franca"},
+            {emoji: "🇩🇪", pais: "alemanha"},
+            {emoji: "🇮🇹", pais: "italia"},
+            {emoji: "🇪🇸", pais: "espanha"},
+            {emoji: "🇦🇷", pais: "argentina"},
+            {emoji: "🇨🇦", pais: "canada"}
+        ];
+
+        let vidas = 3;
+        let pontos = 0;
+        let bandeiraAtual = 0;
+        const SENHA_ADMIN = "bandeira123";
+
+        function embaralhar() {
+            bandeiras.sort(() => Math.random() - 0.5);
+        }
+
+        function mostrarBandeira() {
+            document.getElementById('bandeira').textContent = bandeiras[bandeiraAtual].emoji;
+            document.getElementById('resposta').value = '';
+            document.getElementById('resposta').focus();
+        }
+
+        function atualizarVidas() {
+            document.getElementById('vidas').textContent = '❤️'.repeat(vidas);
+        }
+
+        function atualizarPontos() {
+            document.getElementById('pontos').textContent = pontos;
+        }
+
+        window.verificar = function() {
+            const resposta = document.getElementById('resposta').value.toLowerCase().trim();
+            const correto = bandeiras[bandeiraAtual].pais;
+
+            if (resposta === correto) {
+                pontos += 10;
+                atualizarPontos();
+            } else {
+                vidas--;
+                atualizarVidas();
+                if (vidas <= 0) {
+                    fimDeJogo();
+                    return;
+                }
+            }
+
+            bandeiraAtual++;
+            if (bandeiraAtual >= bandeiras.length) {
+                embaralhar();
+                bandeiraAtual = 0;
+            }
+            mostrarBandeira();
+        }
+
+        window.pular = function() {
+            vidas--;
+            atualizarVidas();
+            if (vidas <= 0) {
+                fimDeJogo();
+                return;
+            }
+            bandeiraAtual++;
+            if (bandeiraAtual >= bandeiras.length) {
+                embaralhar();
+                bandeiraAtual = 0;
+            }
+            mostrarBandeira();
+        }
+
+        function fimDeJogo() {
+            document.getElementById('jogo').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('pontosFinal').textContent = pontos;
+        }
+
+        window.salvarPontuacao = async function() {
+            const nome = document.getElementById('nome').value.trim();
+            if (!nome) {
+                alert('Digite seu nome');
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "ranking"), {
+                    nome: nome,
+                    pontos: pontos,
+                    data: new Date()
+                });
+                document.getElementById('msgSalvo').textContent = 'Pontuação salva! Só o admin vê o ranking.';
+                document.getElementById('nome').value = '';
+            } catch (e) {
+                alert('Erro ao salvar. Você configurou o Firebase?');
+            }
+        }
+
+        window.reiniciar = function() {
+            vidas = 3;
+            pontos = 0;
+            bandeiraAtual = 0;
+            embaralhar();
+            atualizarVidas();
+            atualizarPontos();
+            document.getElementById('jogo').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('msgSalvo').textContent = '';
+            mostrarBandeira();
+        }
+
+        window.verRanking = async function() {
+            const senha = document.getElementById('senha').value;
+            if (senha!== SENHA_ADMIN) {
+                alert('Senha incorreta');
+                return;
+            }
+
+            const q = query(collection(db, "ranking"), orderBy("pontos", "desc"), limit(10));
+            const querySnapshot = await getDocs(q);
+            
+            const tabela = document.getElementById('tabelaRanking');
+            tabela.innerHTML = '<tr><th>Pos</th><th>Nome</th><th>Pontos</th></tr>';
+            
+            let pos = 1;
+            querySnapshot.forEach((doc) => {
+                const dados = doc.data();
+                tabela.innerHTML += `<tr><td>${pos}º</td><td>${dados.nome}</td><td>${dados.pontos}</td></tr>`;
+                pos++;
+            });
+
+            document.getElementById('ranking').style.display = 'block';
+        }
+
+        document.getElementById('resposta').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') verificar();
+        });
+
+        embaralhar();
+        mostrarBandeira();
+    </script>
+</body>
+</html>
