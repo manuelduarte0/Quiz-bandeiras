@@ -6,16 +6,16 @@
     <title>Quiz das Bandeiras</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; 
-            display: flex; 
-            justify-content: center; 
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
             align-items: center;
             padding: 20px;
         }
-        .container {
+       .container {
             background: white;
             padding: 30px;
             border-radius: 20px;
@@ -25,15 +25,15 @@
             width: 100%;
         }
         h1 { color: #333; margin-bottom: 20px; }
-        .info { margin: 15px 0; font-size: 18px; }
-        .timer { 
-            font-size: 24px; 
-            color: #e74c3c; 
+       .info { margin: 15px 0; font-size: 18px; }
+       .timer {
+            font-size: 24px;
+            color: #e74c3c;
             font-weight: bold;
             margin: 10px 0;
         }
-        .bandeira { font-size: 100px; margin: 20px 0; }
-        .opcoes {
+       .bandeira { font-size: 100px; margin: 20px 0; }
+       .opcoes {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
@@ -50,10 +50,10 @@
             transition: 0.3s;
         }
         button:hover { background: #5568d3; transform: scale(1.05); }
-        .btn-pular { background: #95a5a6; grid-column: span 2; }
-        .btn-pular:hover { background: #7f8c8d; }
-        .btn-iniciar { background: #2ecc71; font-size: 20px; padding: 15px; }
-        .btn-iniciar:hover { background: #27ae60; }
+       .btn-pular { background: #95a5a6; grid-column: span 2; }
+       .btn-pular:hover { background: #7f8c8d; }
+       .btn-iniciar { background: #2ecc71; font-size: 20px; padding: 15px; }
+       .btn-iniciar:hover { background: #27ae60; }
         input {
             width: 100%;
             padding: 12px;
@@ -62,7 +62,7 @@
             border-radius: 10px;
             font-size: 16px;
         }
-        .ranking {
+       .ranking {
             margin-top: 20px;
             border-top: 2px solid #eee;
             padding-top: 20px;
@@ -71,17 +71,17 @@
         th, td { padding: 8px; text-align: left; }
         th { background: #667eea; color: white; }
         tr:nth-child(even) { background: #f2f2f2; }
-        .tela { display: none; }
-        .tela.ativa { display: block; }
-        .correct { background: #2ecc71 !important; }
-        .wrong { background: #e74c3c !important; }
+       .tela { display: none; }
+       .tela.ativa { display: block; }
+       .correct { background: #2ecc71!important; }
+       .wrong { background: #e74c3c!important; }
         button:disabled { opacity: 0.7; cursor: not-allowed; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🏁 Quiz das Bandeiras</h1>
-        
+
         <div id="telaInicio" class="tela ativa">
             <h2>Digite seu nome</h2>
             <input type="text" id="nomeJogador" placeholder="Seu nome" maxlength="20">
@@ -144,20 +144,20 @@
         let nomeJogador = "";
         const SENHA_ADMIN = "bandeira123";
         const BIN_ID = "6a22231df5f4af5e29bb515c";
-        const MASTER_KEY = "$2a$10$gnK4p8i70zXGQgGV8mUBGeQihYiL2fV1fTMorFeP0ybmyslYWOMxS
+        const MASTER_KEY = "$2a$10$gnK4p8i70zXGQgGV8mUBGeQihYiL2fV1fTMorFeP0ybmyslYWOMxS";
 
         function iniciarJogo() {
             nomeJogador = document.getElementById('nomeJogador').value.trim();
             if (!nomeJogador) return alert('Digite seu nome!');
-            
+
             vidas = 3;
             pontos = 0;
             paisesDisponiveis = [...PAIS_BANDEIRAS];
-            
+
             document.getElementById('nomeExibido').textContent = nomeJogador;
             document.getElementById('telaInicio').classList.remove('ativa');
             document.getElementById('telaJogo').classList.add('ativa');
-            
+
             atualizarTela();
             novaRodada();
         }
@@ -193,18 +193,18 @@
                 gameOver();
                 return;
             }
-            
+
             const index = Math.floor(Math.random() * paisesDisponiveis.length);
             paisAtual = paisesDisponiveis.splice(index, 1)[0];
-            
+
             document.getElementById('bandeira').textContent = paisAtual.bandeira;
-            
+
             let opcoes = [paisAtual.pais];
-            let paisesErrados = PAIS_BANDEIRAS.filter(p => p.pais !== paisAtual.pais);
+            let paisesErrados = PAIS_BANDEIRAS.filter(p => p.pais!== paisAtual.pais);
             paisesErrados = paisesErrados.sort(() => 0.5 - Math.random()).slice(0, 3);
-            opcoes = [...opcoes, ...paisesErrados.map(p => p.pais)];
+            opcoes = [...opcoes,...paisesErrados.map(p => p.pais)];
             opcoes = opcoes.sort(() => 0.5 - Math.random());
-            
+
             const opcoesDiv = document.getElementById('opcoes');
             opcoesDiv.innerHTML = '';
             opcoes.forEach(opcao => {
@@ -213,7 +213,7 @@
                 btn.onclick = () => verificarResposta(opcao, btn);
                 opcoesDiv.appendChild(btn);
             });
-            
+
             iniciarTimer();
         }
 
@@ -221,7 +221,7 @@
             clearInterval(timerInterval);
             const botoes = document.querySelectorAll('.opcoes button');
             botoes.forEach(b => b.disabled = true);
-            
+
             if (resposta === paisAtual.pais) {
                 pontos += 1;
                 botao.classList.add('correct');
@@ -264,26 +264,25 @@
 
         async function gameOver() {
             clearInterval(timerInterval);
-            
-            // TOCA A MÚSICA TRISTE KKKK
+
             document.getElementById('somDerrota').play().catch(e => console.log('Audio bloqueado'));
-            
+
             document.getElementById('telaJogo').classList.remove('ativa');
             document.getElementById('telaGameOver').classList.add('ativa');
             document.getElementById('nomeFinal').textContent = nomeJogador;
             document.getElementById('pontosFinal').textContent = pontos;
-            
+
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
                     headers: { 'X-Master-Key': MASTER_KEY }
                 });
                 const data = await res.json();
                 const ranking = data.record || [];
-                
+
                 ranking.push({ nome: nomeJogador, pontos, data: new Date().toLocaleDateString('pt-BR') });
                 ranking.sort((a, b) => b.pontos - a.pontos);
                 const top10 = ranking.slice(0, 10);
-                
+
                 await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                     method: 'PUT',
                     headers: {
@@ -292,33 +291,33 @@
                     },
                     body: JSON.stringify(top10)
                 });
-                
+
                 document.getElementById('msgSalvando').textContent = '✅ Pontuação salva! Recarregue para jogar novamente.';
             } catch (e) {
-                document.getElementById('msgSalvando').textContent = '❌ Erro ao salvar pontuação';
+                document.getElementById('msgSalvando').textContent = '❌ Erro ao salvar: ' + e.message;
             }
         }
 
         async function mostrarRanking() {
             const senha = document.getElementById('senha').value;
-            if (senha !== SENHA_ADMIN) return alert('Senha incorreta!');
-            
+            if (senha!== SENHA_ADMIN) return alert('Senha incorreta!');
+
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
                     headers: { 'X-Master-Key': MASTER_KEY }
                 });
                 const data = await res.json();
                 const ranking = data.record || [];
-                
+
                 const tbody = document.getElementById('rankingTable');
                 tbody.innerHTML = '<tr><th>#</th><th>Nome</th><th>Pontos</th></tr>';
                 ranking.forEach((j, i) => {
                     tbody.innerHTML += `<tr><td>${i+1}º</td><td>${j.nome}</td><td>${j.pontos}</td></tr>`;
                 });
-                
+
                 document.getElementById('tabelaRanking').style.display = 'block';
             } catch (e) {
-                alert('Erro ao carregar ranking');
+                alert('Erro ao carregar ranking: ' + e.message);
             }
         }
     </script>
