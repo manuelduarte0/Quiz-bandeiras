@@ -143,8 +143,9 @@
         let timerInterval;
         let nomeJogador = "";
         const SENHA_ADMIN = "bandeira123";
-        const BIN_ID = "68f27a8d43b1c97be9799d2a";
-        const API_KEY = "$2a$10$gnK4p8i70zXGQgGV8mUBGeQihYiL2f...";
+        const BIN_ID = 
+        const BIN_ID = "6a22231df5f4af5e29bb515c";
+const MASTER_KEY = "$2a$10$gnK4p8i70zXGQgGV8mUBGeQihYiL2fV1fTMorFeP0ybmyslYWOMxS";
 
         function iniciarJogo() {
             nomeJogador = document.getElementById('nomeJogador').value.trim();
@@ -275,10 +276,10 @@
             
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': API_KEY }
+                    headers: { 'X-Master-Key': MASTER_KEY }
                 });
                 const data = await res.json();
-                const ranking = data.record.ranking || [];
+                const ranking = data.record || [];
                 
                 ranking.push({ nome: nomeJogador, pontos, data: new Date().toLocaleDateString('pt-BR') });
                 ranking.sort((a, b) => b.pontos - a.pontos);
@@ -290,7 +291,7 @@
                         'Content-Type': 'application/json',
                         'X-Master-Key': API_KEY
                     },
-                    body: JSON.stringify({ ranking: top10 })
+                    body: JSON.stringify(top10)
                 });
                 
                 document.getElementById('msgSalvando').textContent = '✅ Pontuação salva! Recarregue para jogar novamente.';
@@ -305,10 +306,10 @@
             
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': API_KEY }
+                    headers: { 'X-Master-Key': MASTER_KEY }
                 });
                 const data = await res.json();
-                const ranking = data.record.ranking || [];
+                const ranking = data.record || [];
                 
                 const tbody = document.getElementById('rankingTable');
                 tbody.innerHTML = '<tr><th>#</th><th>Nome</th><th>Pontos</th></tr>';
